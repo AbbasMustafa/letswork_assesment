@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -6,12 +8,21 @@ from rest_framework import status
 
 from .models import Event
 from .serializers import EventSerializer
-
+from event_management.users.models import User
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.order_by('-pk').select_related('owner').prefetch_related('attendees')
     serializer_class = EventSerializer
     permission_classes = [IsAdminUser]
+    lookup_field = 'pk'
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        if self.action == ['create', 'add_attendee', 'remove_attendee']:
+            return [IsAuthenticated()]
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAdminUser()]
 
     def create(self, request, *args, **kwargs):
         serializer = EventSerializer(data=request.data, context={'request': request})
@@ -82,6 +93,24 @@ class EventViewSet(viewsets.ModelViewSet):
                             "status_code": status.HTTP_200_OK,
                         },
                     )
+    
+class AttendeeViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.order_by('-pk').select_related('owner').prefetch_related('attendees')
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated]
+        
+    @action(detail=True, methods=['post'])
+    def add(self, request, pk=None):
+        event = get_object_or_404(Event, pk=pk)
+        user = get_object_or_404(User, pk=request.user.pk)        
+        event.attendees.add(user)
+        
+        return Response({'status': 'attendee added'}, status=status.HTTP_200_OK)
 
-
-
+    @action(detail=True, methods=['post'])
+    def remove(self, request, pk=None):
+        event = get_object_or_404(Event, pk=pk)
+        user = get_object_or_404(User, pk=request.user.pk)        
+        event.attendees.remove(user)
+        
+        return Response({'status': 'attendee removed'}, status=status.HTTP_200_OK)
