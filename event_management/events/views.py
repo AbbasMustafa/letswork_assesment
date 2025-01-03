@@ -16,7 +16,10 @@ class EventViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return [AllowAny()]
-        return [IsAdminUser()]
+        if self.action == ['create']:
+            return [IsAuthenticated()]
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [IsAdminUser()]
 
     def create(self, request, *args, **kwargs):
         serializer = EventSerializer(data=request.data, context={'request': request})
