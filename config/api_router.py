@@ -2,11 +2,13 @@ from django.conf import settings
 from rest_framework.routers import DefaultRouter
 from rest_framework.routers import SimpleRouter
 
+from event_management.events.views import EventViewSet
 from event_management.users.api.views import UserViewSet
 
 router = DefaultRouter() if settings.DEBUG else SimpleRouter()
 
 router.register("users", UserViewSet)
+router.register("events", EventViewSet)
 
 
 app_name = "api"
