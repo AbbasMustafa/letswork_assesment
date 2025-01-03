@@ -4,7 +4,7 @@ from .models import Event, User  # Assuming User is the model for the owner
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email"]
+        fields = ["id", "username", "mobile_number"]
 
 class EventSerializer(serializers.ModelSerializer):
     owner = UserSerializer(read_only=True)
